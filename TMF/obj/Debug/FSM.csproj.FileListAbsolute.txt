@@ -7,3 +7,4 @@ D:\Desktop\ProgramTemp\FSM\TMF\obj\Debug\FSM.csproj.GenerateResource.cache
 D:\Desktop\ProgramTemp\FSM\TMF\obj\Debug\FSM.csproj.CoreCompileInputs.cache
 D:\Desktop\ProgramTemp\FSM\TMF\obj\Debug\FSM.exe
 D:\Desktop\ProgramTemp\FSM\TMF\obj\Debug\FSM.pdb
+D:\Desktop\ProgramTemp\FSM\TMF\obj\Debug\FSM.csprojAssemblyReference.cache

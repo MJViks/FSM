@@ -14,19 +14,23 @@ namespace FSM
     {
         private FSM Fsm;
 
-        private Point Target;
-        private const int visibility = 100;
+        private Point Target, enemy;
         private CheckBox[] Leafs;
-        private bool withLeaf;
+        private CheckBox targetLeaf = null;
+        private bool isFear;
+        private const int RunAwaySpeed = 2,
+                            Speed = 1,
+                            visibility = 100;
+
         public Form1()
         {
             InitializeComponent();
             Fsm = new FSM();
-            Leafs = getAllLeafs(Controls);
-            withLeaf = false;
+            Leafs = GetAllLeafs(Controls);
+            isFear = false;
         }
 
-        private CheckBox[] getAllLeafs(Control.ControlCollection controls) {
+        private CheckBox[] GetAllLeafs(Control.ControlCollection controls) {
             CheckBox[] answer = new CheckBox[0];
             foreach (Control value in controls)
             {
@@ -40,43 +44,50 @@ namespace FSM
             return answer;
         }
 
-        private void chLeaf_MouseDown(object sender, MouseEventArgs e)
-        {
-            chLeaf.DoDragDrop(sender, DragDropEffects.None);
-            chLeaf.Location = new Point(MousePosition.X - (chLeaf.Width / 2), MousePosition.Y - (chLeaf.Height * 2));
-        }
-
-        private void timer1_Tick(object sender, EventArgs e)
-        {
-            Fsm.Update();
-        }
-
-        private void setRandomTarget(Button ant, Point target) {
+        private void SetRandomTarget(Button ant, Point target) {
             Random rnd = new Random();
             int rndX = rnd.Next(ant.Location.X - visibility, ant.Location.X + visibility);
             int rndY = rnd.Next(ant.Location.Y - visibility, ant.Location.Y + visibility);
             int rndXRight = (rndX % 2) > 0 ? rndX + 1 : rndX;
             int rndYRight = (rndY % 2) > 0 ? rndY + 1 : rndY;
+
+            if (rndXRight > Width || rndYRight > Height || rndXRight < 0 || rndYRight < 0)
+                return;
             Target = new Point(rndXRight, rndYRight);
         }
-        private bool isGoOneStepToTarget(Button ant, Point target, int speed) {
-            this.Text = target.X.ToString() + ' ' + target.Y.ToString() + '|' + ant.Location.X.ToString() + ' ' + ant.Location.Y.ToString();
+
+        private bool InTarget(Button ant, Point target) {
             int X = target.X;
             int Y = target.Y;
             if ((X == ant.Location.X) && (Y == ant.Location.Y))
-                return false;
+                return true;
+            return false;
+        }
+        private void GoOneStepToTarget(Button ant, Point target, int speed, bool isFear) {
+            int X = target.X;
+            int Y = target.Y;
+            if ((X == ant.Location.X) && (Y == ant.Location.Y))
+                return;
             int absX = Math.Abs(X - ant.Location.X);
             int absY = Math.Abs(Y - ant.Location.Y);
+            
             int wayDirectionX = absX == 0 ? 0 : (X - ant.Location.X) / absX;
             int wayDirectionY = absY == 0 ? 0 : (Y - ant.Location.Y) / absY;
+
+            if (isFear) {
+                wayDirectionX *= -1;
+                wayDirectionY *= -1;
+            }
+                
             ant.Location = new Point(ant.Location.X + (wayDirectionX * speed), ant.Location.Y + (wayDirectionY * speed));
-            return true;
+            return;
         }
 
         private CheckBox FoundLeaf(Button ant, CheckBox[] leafs) { 
             foreach (CheckBox leaf in leafs) {
                 //Расстояние между точками: AB = sqrt((x1 - x2)^2 - (y1 - y2)^2)
-
+                if (leaf.Checked)
+                    continue;
                 int xAntCentre = ant.Location.X + (ant.Width / 2);      //x Муровья
                 int yAntCentre = ant.Location.Y + (ant.Height / 2);     //y Муровья
                 int xLeafCentre = leaf.Location.X + (leaf.Width / 2);   //x Листа
@@ -98,37 +109,131 @@ namespace FSM
             return null;
         }
 
+        private void ChFear(Button ant, Point enemy) {
+            //Расстояние между точками: AB = sqrt((x1 - x2)^2 - (y1 - y2)^2)
+
+            int xAntCentre = ant.Location.X + (ant.Width / 2);      //x Муровья
+            int yAntCentre = ant.Location.Y + (ant.Height / 2);     //y Муровья
+            double A = Math.Pow(xAntCentre - enemy.X, 2);                   //Квадрат разности A
+            double B = Math.Pow(yAntCentre - enemy.Y, 2);                   //Квадрат разности B
+            double Distance = Math.Sqrt(A + B);                         //Корень
+
+            //Если расстояние между точками меньше радиуса, то муровей напуган
+            if (Distance < visibility) {
+                isFear = true;
+                Target = enemy;
+                targetLeaf = null;
+                return;
+            }
+            isFear = false;
+        }
+
         private void RunAway(Button ant)
         {
-            if (!isGoOneStepToTarget(ant, Target, 2))
-                setRandomTarget(ant, Target);
+            Text += "RunAway";
+            ChFear(ant, enemy);
+            GoOneStepToTarget(ant, Target, RunAwaySpeed, isFear);
+            if (InTarget(ant, Target))
+                SetRandomTarget(ant, Target);
         }
 
         private void Serch(Button ant) {
-            if (!isGoOneStepToTarget(ant, Target, 1))
-                setRandomTarget(ant, Target);
+            GoOneStepToTarget(ant, Target, Speed, isFear);
+            if (InTarget(ant, Target))
+                SetRandomTarget(ant, Target);
         }
 
         private void SerchLeaf(Button ant)
         {
+            ChFear(ant, enemy);
+            Text += "SerchLeaf";
             CheckBox foundLeaf = FoundLeaf(ant, Leafs);
             if (foundLeaf == null)
                 Serch(ant);
             else {
-                
-                if (!isGoOneStepToTarget(ant, Target, 1))
+                GoOneStepToTarget(ant, Target, Speed, isFear);
+                if (!InTarget(ant, Target))
                     Target = new Point(foundLeaf.Location.X - (foundLeaf.Width /2), foundLeaf.Location.Y - (foundLeaf.Height / 2));
 
+                Point foundLeafCentre = new Point(foundLeaf.Location.X + (foundLeaf.Width / 2) , foundLeaf.Location.Y + (foundLeaf.Height / 2));
+                if (DotInSqrt(ant.Location, ant.Width, ant.Height, foundLeafCentre, 0))
+                    targetLeaf = foundLeaf;
             }
         }
 
-        private void btnAnt_Click(object sender, EventArgs e)
+        private bool DotInSqrt(Point sqrt, int width, int height, Point dot, int range) {
+            int x1 = sqrt.X - range;
+            int x2 = sqrt.X + width + range;
+            int y1 = sqrt.Y - range;
+            int y2 = sqrt.Y + height + range;
+            if (dot.X > x1 && dot.Y > y1 && dot.X < x2 && dot.Y < y2)
+                return true;
+            return false;
+        }
+
+        private bool InHome(Button ant, RichTextBox home)
         {
-            setRandomTarget(btnAnt, Target);
+            if (DotInSqrt(home.Location, home.Width, home.Height, ant.Location, -5))
+                return true;
+            return false;
+        }
+
+        private void GoHomeWithLeaf(Button ant, RichTextBox home, CheckBox leaf) {
+            Text += "GoHomeWithLeaf";
+            Point homeCentre = new Point(home.Location.X + (home.Width / 2), home.Location.Y + (home.Height / 2));
+            GoOneStepToTarget(ant, homeCentre, Speed, isFear);
+            if (InHome(ant, home))
+            {
+                SetRandomTarget(ant, Target);
+                leaf.Checked = true;
+                targetLeaf = null;
+            }
+            else
+                leaf.Location = ant.Location;
+        }
+
+        //---------FORM ACTIONS---------
+
+        private void Game() {
+            if (isFear) {
+                Fsm.PushState(() => { RunAway(btnAnt); });
+                return;
+            }
+
+            if (targetLeaf == null)
+            {
+                Fsm.PushState(() => { SerchLeaf(btnAnt); });
+                return;
+            }
+            else {
+                Fsm.PushState(() => { GoHomeWithLeaf(btnAnt, rtbHome, targetLeaf); });
+                return;
+            }
+        }
+        private void BtnAnt_Click(object sender, EventArgs e)
+        {
+            SetRandomTarget(btnAnt, Target);
             CheckBox[] Leafs = new CheckBox[1];
             Leafs[0] = chLeaf;
+            timer1.Enabled = true;
             //isFoundLeaf(btnAnt, Leafs);
-            Fsm.pushState(() => { SerchLeaf(btnAnt); });
+        }
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            Text = Target.X.ToString() + " " + Target.Y.ToString() + " | " + enemy.X.ToString() + " " + enemy.Y.ToString() + " | ";
+            Game();
+            Fsm.Update();
+        }
+        private void ChLeaf_MouseDown(object sender, MouseEventArgs e)
+        {
+            chLeaf.DoDragDrop(sender, DragDropEffects.None);
+            chLeaf.Location = new Point(MousePosition.X - (chLeaf.Width / 2), MousePosition.Y - (chLeaf.Height * 2));
+        }
+
+        private void Form1_MouseMove(object sender, MouseEventArgs e)
+        {
+            enemy.X = e.X;
+            enemy.Y = e.Y;
         }
     }
 }

@@ -34,7 +34,7 @@ namespace FSM
         }
 
         //Добавление команды в конец массива (Стека)
-        public void pushState(Stack state) {
+        public void PushState(Stack state) {
             if (GetCurrentState() != state) {               //Если последняя команда НЕ равна добовляемой. Что бы избежать дублирования повторяющихся функций
                 Array.Resize(ref State, State.Length + 1);  //Изменение размера массива (Ссылка на массив, новая длинна)
                 State[State.GetUpperBound(0)] = state;      //Присвоение новой команды в последний индекс массива
@@ -43,6 +43,8 @@ namespace FSM
 
         //Удаление последней команды из стека и возврат ее
         public Stack popState() {
+            if (State.Length == 0)
+                return null;
             Stack answer = State[State.GetUpperBound(0)];   //Получение последней команды из стека
             State[State.GetUpperBound(0)] = null;           //Обнуление последней команды
             Array.Resize(ref State, State.Length - 1);      //Изменение размера массива (Уменьшение)
