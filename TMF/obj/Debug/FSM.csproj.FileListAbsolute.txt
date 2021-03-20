@@ -1,0 +1,9 @@
+D:\Desktop\ProgramTemp\FSM\TMF\bin\Debug\FSM.exe.config
+D:\Desktop\ProgramTemp\FSM\TMF\bin\Debug\FSM.exe
+D:\Desktop\ProgramTemp\FSM\TMF\bin\Debug\FSM.pdb
+D:\Desktop\ProgramTemp\FSM\TMF\obj\Debug\FSM.Form1.resources
+D:\Desktop\ProgramTemp\FSM\TMF\obj\Debug\FSM.Properties.Resources.resources
+D:\Desktop\ProgramTemp\FSM\TMF\obj\Debug\FSM.csproj.GenerateResource.cache
+D:\Desktop\ProgramTemp\FSM\TMF\obj\Debug\FSM.csproj.CoreCompileInputs.cache
+D:\Desktop\ProgramTemp\FSM\TMF\obj\Debug\FSM.exe
+D:\Desktop\ProgramTemp\FSM\TMF\obj\Debug\FSM.pdb
