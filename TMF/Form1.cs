@@ -28,16 +28,14 @@ namespace FSM
             Fsm2 = new FSM();
             Fsm3 = new FSM();
             Leafs = Ant.GetAllLeafs<CheckBox>(Controls);
-            Ants.Add(Fsm1,new Ant(button1, RunAwaySpeed, Speed, Visibility, rtbHome, this));
-            Ants.Add(Fsm2, new Ant(btnAnt, RunAwaySpeed, Speed, Visibility, rtbHome, this));
-            Ants.Add(Fsm3, new Ant(button2, RunAwaySpeed, Speed, Visibility, rtbHome, this));
         }
             //---------FORM ACTIONS---------
 
-            private void Game() 
-            {
+        private void Game() 
+        {
             foreach (KeyValuePair<FSM, Ant> ant in Ants)
             {
+                ant.Key.popState();
                 if (ant.Value.IsFear)
                 {
                     ant.Key.PushState(() => { ant.Value.RunAway(Enemy); });
@@ -55,14 +53,15 @@ namespace FSM
                     continue;
                 }
             }
-
-            }
+        }
 
         private void btnAdd_Click(object sender, EventArgs e)
         {
+            Random rnd = new Random();
+
             CheckBox ch = new CheckBox();
             ch.AutoSize = true;
-            ch.Location = new System.Drawing.Point(233, 148);
+            ch.Location = new System.Drawing.Point(rnd.Next(20, Width), rnd.Next(20, Height));
             ch.Size = new System.Drawing.Size(15, 14);
             ch.TabIndex = 1;
             ch.UseVisualStyleBackColor = true;
@@ -73,9 +72,26 @@ namespace FSM
             Leafs[Leafs.Length - 1] = ch;
         }
 
+        private void button3_Click(object sender, EventArgs e)
+        {
+            Random rnd = new Random();
+
+            Button btn = new Button();
+            btn.Anchor = System.Windows.Forms.AnchorStyles.None;
+            btn.Location = new System.Drawing.Point(rnd.Next(20, Width), rnd.Next(20, Height));
+            btn.Size = new System.Drawing.Size(23, 23);
+            btn.TabIndex = 4;
+            btn.Text = "button1";
+            btn.UseVisualStyleBackColor = true;
+            btn.Click += new System.EventHandler(this.BtnAnt_Click);
+
+            Controls.Add(btn);
+        }
+
         private void BtnAnt_Click(object sender, EventArgs e)
         {
-            timer1.Enabled = true;
+            Button btn = sender as Button;
+            Ants.Add(new FSM(), new Ant(btn, RunAwaySpeed, Speed, Visibility, rtbHome, this));
         }
         private void timer1_Tick(object sender, EventArgs e)
         {
