@@ -12,46 +12,23 @@ namespace FSM
 {
     public partial class Form1 : Form
     {
-        private FSM Fsm1, Fsm2, Fsm3;
-
         private Point Enemy;
-        private Control[] Leafs;
         private const int RunAwaySpeed = 3,
                             Speed = 2,
                             Visibility = 100;
-        private Dictionary<FSM, Ant> Ants = new Dictionary<FSM, Ant>();
+        private List<Ant> Ants = new List<Ant>();
 
         public Form1()
         {
             InitializeComponent();
-            Fsm1 = new FSM();
-            Fsm2 = new FSM();
-            Fsm3 = new FSM();
-            Leafs = Ant.GetAllLeafs<CheckBox>(Controls);
+            Ant.Leafs = Ant.GetAllLeafs<CheckBox>(Controls);
         }
             //---------FORM ACTIONS---------
 
         private void Game() 
         {
-            foreach (KeyValuePair<FSM, Ant> ant in Ants)
-            {
-                ant.Key.popState();
-                if (ant.Value.IsFear)
-                {
-                    ant.Key.PushState(() => { ant.Value.RunAway(Enemy); });
-                    continue;
-                }
-
-                if (ant.Value.TargetLeaf == null)
-                {
-                    ant.Key.PushState(() => { ant.Value.SerchLeaf(Leafs, Enemy); });
-                    continue;
-                }
-                else
-                {
-                    ant.Key.PushState(() => { ant.Value.GoHomeWithLeaf(); });
-                    continue;
-                }
+            foreach (Ant ant in Ants) {
+                ant.Brain.Update();
             }
         }
 
@@ -68,8 +45,7 @@ namespace FSM
             ch.MouseDown += new MouseEventHandler(this.ChLeaf_MouseDown);
 
             Controls.Add(ch);
-            Array.Resize(ref Leafs, Leafs.Length + 1);
-            Leafs[Leafs.Length - 1] = ch;
+            Ant.Leafs = Ant.GetAllLeafs<CheckBox>(Controls);
         }
 
         private void button3_Click(object sender, EventArgs e)
@@ -86,20 +62,21 @@ namespace FSM
             btn.Click += new System.EventHandler(this.BtnAnt_Click);
 
             Controls.Add(btn);
+
+            foreach (Control c in Controls) {
+                if (c is CheckBox ch)//test
+                    ch.Enabled = true;
+            }
         }
 
         private void BtnAnt_Click(object sender, EventArgs e)
         {
             Button btn = sender as Button;
-            Ants.Add(new FSM(), new Ant(btn, RunAwaySpeed, Speed, Visibility, rtbHome, this));
+            Ants.Add(new Ant(btn, RunAwaySpeed, Speed, Visibility, rtbHome, this));
         }
         private void timer1_Tick(object sender, EventArgs e)
         {
             Game();
-            foreach (KeyValuePair<FSM, Ant> ant in Ants)
-            {
-                ant.Key.Update();
-            }
         }
         private void ChLeaf_MouseDown(object sender, MouseEventArgs e)
         {
@@ -112,6 +89,7 @@ namespace FSM
         {
             Enemy.X = e.X;
             Enemy.Y = e.Y;
+            Ant.Enemy = new Point(e.X, e.Y);
         }
     }
 }

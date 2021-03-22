@@ -17,6 +17,9 @@ namespace FSM
         public Control TargetLeaf;
         public bool IsFear;
         public string Status;
+        public FSM Brain;
+        public static Control[] Leafs;
+        public static Point Enemy;
         public Ant(Button ant, int runAwaySpeed, int speed, int visibility, Control home, Control box) {
             ThisAnt = ant;
             RunAwaySpeed = runAwaySpeed;
@@ -27,6 +30,8 @@ namespace FSM
             Home = home;
             Status = String.Empty;
             SetRandomTarget();
+            Brain = new FSM();
+            Brain.PushState(() => { SerchLeaf(); });
         }
 
         static public T[] GetAllLeafs<T>(Control.ControlCollection controls)
@@ -90,9 +95,9 @@ namespace FSM
             return;
         }
 
-        private Control FoundLeaf(Control[] leafs)
+        private Control FoundLeaf()
         {
-            foreach (Control leaf in leafs)
+            foreach (Control leaf in Leafs)
             {
                 
                 if (!leaf.Enabled)
@@ -105,22 +110,24 @@ namespace FSM
             return null;
         }
 
-        private void ChFear(Point enemy)
+        private void ChFear()
         {
             Point antCentre = SupportFunc.getCentre(ThisAnt.Location, ThisAnt.Width, ThisAnt.Height);
             
-            if (SupportFunc.InRadius(antCentre, enemy, Visibility))
+            if (SupportFunc.InRadius(antCentre, Enemy, Visibility))
             {
                 IsFear = true;
-                Target = enemy;
+                Target = Enemy;
                 TargetLeaf = null;
                 return;
             }
             IsFear = false;
         }
-        public void RunAway(Point enemy)
+        public void RunAway()
         {
-            ChFear(enemy);
+            if (!IsFear)
+                Brain.popState();
+            ChFear();
             GoOneStepToTarget(RunAwaySpeed);
             if (InTarget())
                 SetRandomTarget();
@@ -132,10 +139,15 @@ namespace FSM
                 SetRandomTarget();
         }
 
-        public void SerchLeaf(Control[] leafs,Point enemy)
+        public void SerchLeaf()
         {
-            ChFear(enemy);
-            Control foundLeaf = FoundLeaf(leafs);
+            if (IsFear)
+                Brain.PushState(()=> { RunAway(); });
+            if (TargetLeaf != null)
+                Brain.PushState(() => { GoHomeWithLeaf(); });
+
+            ChFear();
+            Control foundLeaf = FoundLeaf();
             if (foundLeaf == null)
                 Serch();
             else
@@ -159,6 +171,8 @@ namespace FSM
 
         public void GoHomeWithLeaf()
         {
+            if(TargetLeaf == null)
+                Brain.PushState(() => { SerchLeaf(); });
             Point homeCentre = SupportFunc.getCentre(Home.Location, Home.Width, Home.Height);
             Target = homeCentre;
             GoOneStepToTarget(Speed);
@@ -167,6 +181,7 @@ namespace FSM
                 SetRandomTarget();
                 TargetLeaf.Enabled = false;
                 TargetLeaf = null;
+                Brain.popState();
             }
             else
                 TargetLeaf.Location = ThisAnt.Location;
